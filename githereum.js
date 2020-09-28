@@ -1,18 +1,18 @@
-const defaultLogger   = require('debug')('gitchain');
-const fs              = require('fs');
-const Git             = require('isomorphic-git');
-Git.plugins.set('fs', fs);
-const { resolve }                               = require('path');
-const { createKeyPair }                         = require('crypto2');
-const crypto2                                   = require('crypto2');
-const { writeFileSync, existsSync, mkdirSync }  = fs;
-const { join }                                  = require('path');
+const defaultLogger = require('debug')('gitchain');
+const fs = require('fs');
+const Git = require('isomorphic-git');
+//Git.plugins.set('fs', fs);
+const { resolve } = require('path');
+const { createKeyPair } = require('crypto2');
+const crypto2 = require('crypto2');
+const { writeFileSync, existsSync, mkdirSync } = fs;
+const { join } = require('path');
 
-const { randomKey, encrypt, decrypt }                                     = require("./utils/crypto");
-const { writeToBlobStream, readFromBlobStream, validateBlobStoreConfig }  = require('./utils/blob-storage');
+const { randomKey, encrypt, decrypt } = require("./utils/crypto");
+const { writeToBlobStream, readFromBlobStream, validateBlobStoreConfig } = require('./utils/blob-storage');
 
 class Githereum {
-  constructor(repoPath, repoName, contract, from, { log, privateKeyDir }={}) {
+  constructor(repoPath, repoName, contract, from, { log, privateKeyDir } = {}) {
     if (!repoPath) {
       throw new Error("repoPath is a required argument");
     }
@@ -25,9 +25,9 @@ class Githereum {
     }
 
     this.repoName = repoName;
-    this.repoPath   = repoPath;
-    this.gitDir     = join(this.repoPath, '.git');
-    if(existsSync(repoPath) && !existsSync(this.gitDir)) {
+    this.repoPath = repoPath;
+    this.gitDir = join(this.repoPath, '.git');
+    if (existsSync(repoPath) && !existsSync(this.gitDir)) {
       // treat it as a bare repo because it exists buts it doesn't have a .git dir in it
       this.gitDir = this.repoPath;
     }
@@ -35,7 +35,7 @@ class Githereum {
     this.contract = contract;
     this.from = from;
 
-    this.log        = log || defaultLogger;
+    this.log = log || defaultLogger;
 
     this.privateKeyDir = privateKeyDir;
   }
@@ -84,7 +84,7 @@ class Githereum {
     log(`Adding owner ${owner} to repo ${repo}`);
 
     if (await contract.isPrivate(repo)) {
-      if(!privateKeyDir || !publicKeyDir) {
+      if (!privateKeyDir || !publicKeyDir) {
         throw new Error("Public and private key is required to add owner to private repo");
       }
 
@@ -122,7 +122,7 @@ class Githereum {
 
 
     if (await contract.isPrivate(repo)) {
-      if(!privateKeyDir || !publicKeyDir) {
+      if (!privateKeyDir || !publicKeyDir) {
         throw new Error("Public and private key is required to add writer to private repo");
       }
 
@@ -157,7 +157,7 @@ class Githereum {
 
     log(`Adding reader ${reader} to repo ${repo}`);
 
-    if(!ownerKeyDir || !readerKeyDir) {
+    if (!ownerKeyDir || !readerKeyDir) {
       throw new Error("Public and private key is required to add reader to private repo");
     }
 
@@ -237,7 +237,7 @@ class Githereum {
     return { publicKeyPath, privateKeyPath };
   }
 
-  async ensureRegistered()  {
+  async ensureRegistered() {
     let repo = await this.contract.repos(this.repoName);
 
     if (!repo.registered) {
@@ -260,9 +260,9 @@ class Githereum {
   async storeTree(treeId) {
     await this.writeToPackfile(treeId);
 
-    let treeInfo = await this.gitCommand('readObject', {oid: treeId, format: 'parsed'});
+    let treeInfo = await this.gitCommand('readObject', { oid: treeId, format: 'parsed' });
 
-    for (let entry of treeInfo.object.entries) {
+    for (let entry of treeInfo.object) {
       if (entry.type === 'tree') {
         await this.storeTree(entry.oid);
       } else if (entry.type === 'blob') {
@@ -290,7 +290,8 @@ class Githereum {
       let packFile = await readFromBlobStream(packSha, this.blobStorageConfig);
 
       if (this.encryptionKey) {
-        packFile = Buffer.from(JSON.parse(decrypt(packFile.toString(), this.encryptionKey)));
+        let obj = JSON.parse(decrypt(packFile.toString(), this.encryptionKey));
+        packFile = Buffer.from(Object.values(obj));
       }
 
       let path = join(this.gitDir, "objects/pack", packSha);
@@ -304,10 +305,11 @@ class Githereum {
 
   }
 
-  async gitCommand(cmd, opts={}) {
-    if(!opts.dir) {
+  async gitCommand(cmd, opts = {}) {
+    if (!opts.dir) {
       opts.dir = this.repoPath;
     }
+    opts.fs = fs;
 
     if (!opts.gitdir) {
       opts.gitdir = this.gitDir;
@@ -317,17 +319,17 @@ class Githereum {
   }
 
   async writePushToBlockchain(commit, tag, packSha) {
-    await this.contract.push(this.repoName, tag, commit.oid, packSha, {from: this.from});
+    await this.contract.push(this.repoName, tag, commit.oid, packSha, { from: this.from });
   }
 
   async handlePrivate() {
     this.isPrivate = await this.contract.isPrivate(this.repoName);
 
-    if(this.isPrivate) {
+    if (this.isPrivate) {
       if (!this.privateKeyDir) {
         throw new Error("Private key is required for this repo operation");
       }
-      if(!this.from) {
+      if (!this.from) {
         throw new Error("From argument is required for this repo operation");
       }
       this.encryptionKey = await Githereum.getDecryptedKey(this.privateKeyDir, this.repoName, this.from, this.contract);
@@ -336,7 +338,7 @@ class Githereum {
 
   async push(tag) {
 
-    if(!tag || !tag.length) {
+    if (!tag || !tag.length) {
       throw new Error("Tag must be provided to push to");
     }
     await this.ensureRegistered();
@@ -346,7 +348,7 @@ class Githereum {
 
     try {
       head = await Githereum.head(this.repoName, tag, this.contract, { log: this.log });
-    } catch(e) {
+    } catch (e) {
       // There is no head for this tag
     }
 
@@ -361,20 +363,20 @@ class Githereum {
       for (let commit of commits) {
         this.log(`Storing commit ${commit.oid}`);
         await this.writeToPackfile(commit.oid);
-        await this.storeTree(commit.tree);
+        await this.storeTree(commit.commit.tree);
       }
     });
 
     await this.writeToBlobStream(filename, packfile);
 
-    let pushPayload = await this.writePushToBlockchain(commits[commits.length-1], tag, filename);
+    let pushPayload = await this.writePushToBlockchain(commits[commits.length - 1], tag, filename);
 
     return pushPayload;
   }
 
   async clone(tag) {
 
-    if(!tag || !tag.length) {
+    if (!tag || !tag.length) {
       throw new Error("Tag must be provided to clone from");
     }
     await this.ensureRegistered();
@@ -390,7 +392,7 @@ class Githereum {
   }
 
   async pull(tag) {
-    if(!tag || !tag.length) {
+    if (!tag || !tag.length) {
       throw new Error("Tag must be provided to pull from");
     }
     await this.ensureRegistered();
@@ -442,7 +444,7 @@ class Githereum {
   }
 
   async readObject(sha) {
-    let { object } = await this.gitCommand('readObject', { oid: sha, format: 'content'});
+    let { object } = await this.gitCommand('readObject', { oid: sha, format: 'content' });
     return object;
   }
 

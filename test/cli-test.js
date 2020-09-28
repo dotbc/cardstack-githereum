@@ -1,13 +1,13 @@
 const { expect } = require('chai');
-const { shellCommand }            = require("../utils/async");
-const fs                          = require('fs');
-const glob                        = require('fast-glob');
-const Git                         = require('isomorphic-git');
-const { resolve }                 = require('path');
-const crypto2                     = require('crypto2');
+const { shellCommand } = require("../utils/async");
+const fs = require('fs');
+const glob = require('fast-glob');
+const Git = require('isomorphic-git');
+const { resolve } = require('path');
+const crypto2 = require('crypto2');
 
 
-const { cli, setupFixtureRepo, setupBareFixtureRepo }   = require('./helper');
+const { cli, setupFixtureRepo, setupBareFixtureRepo } = require('./helper');
 
 
 const { TestHelper } = require('zos');
@@ -20,7 +20,7 @@ const GithereumContract = Contracts.getFromLocal('Githereum');
 
 
 contract("Githereum", (addresses) => {
-  const [ owner, repoOwner, someRandomAddress, otherOwner, ownerOfOtherRepo, writer, otherWriter, reader, otherReader ] = addresses;
+  const [owner, repoOwner, someRandomAddress, otherOwner, ownerOfOtherRepo, writer, otherWriter, reader, otherReader] = addresses;
 
   let githereumContract;
 
@@ -51,10 +51,10 @@ contract("Githereum", (addresses) => {
     githereumContract = await this.project.createProxy(GithereumContract);
   });
 
-  describe("Roles", async function() {
+  describe("Roles", async function () {
     this.slow(1000);
 
-    it("Registers a repo", async function() {
+    it("Registers a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isOwner("my-great-repo", repoOwner).call()).to.be.ok;
@@ -65,7 +65,7 @@ contract("Githereum", (addresses) => {
       expect(await ownerCount('my-great-repo')).to.equal(1);
     });
 
-    it("Doesn't allow registering an existing repo", async function() {
+    it("Doesn't allow registering an existing repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isOwner("my-great-repo", repoOwner).call()).to.be.ok;
@@ -75,7 +75,7 @@ contract("Githereum", (addresses) => {
       await expect(attemptedCreate).to.be.rejectedWith(/Repo already exists/);
     });
 
-    it("Repo owners can add new repo owners to a repo", async function() {
+    it("Repo owners can add new repo owners to a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isOwner("my-great-repo", otherOwner).call()).to.not.be.ok;
@@ -87,7 +87,7 @@ contract("Githereum", (addresses) => {
       expect(await ownerCount('my-great-repo')).to.equal(2);
     });
 
-    it("Repo owners cannot add new repo owners to a repo they do not own", async function() {
+    it("Repo owners cannot add new repo owners to a repo they do not own", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`register other-repo --from ${ownerOfOtherRepo}`);
 
@@ -105,7 +105,7 @@ contract("Githereum", (addresses) => {
       expect(await ownerCount('my-great-repo')).to.equal(1);
     });
 
-    it("Repo owners can remove existing repo owners from a repo", async function() {
+    it("Repo owners can remove existing repo owners from a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add owner my-great-repo ${otherOwner} --from ${repoOwner}`);
 
@@ -122,7 +122,7 @@ contract("Githereum", (addresses) => {
       expect(await ownerCount('my-great-repo')).to.equal(1);
     });
 
-    it("Repo owners cannot remove existing repo owners from a repo they do not own", async function() {
+    it("Repo owners cannot remove existing repo owners from a repo they do not own", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add owner my-great-repo ${otherOwner} --from ${repoOwner}`);
       await runCli(`register other-repo --from ${ownerOfOtherRepo}`);
@@ -140,13 +140,13 @@ contract("Githereum", (addresses) => {
       expect(await ownerCount('my-great-repo')).to.equal(2);
     });
 
-    it("Last owner cannot be removed from a repo", async function() {
+    it("Last owner cannot be removed from a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       let attemptedRemove = runCli(`remove owner my-great-repo ${repoOwner} --from ${repoOwner}`);
       await expect(attemptedRemove).to.be.rejectedWith(/Cannot remove the last owner from a repo/);
     });
 
-    it("Repo owners can write to a repo they own", async function() {
+    it("Repo owners can write to a repo they own", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
 
       await setupFixtureRepo('dummygit');
@@ -154,7 +154,7 @@ contract("Githereum", (addresses) => {
       await runCli(`push tmp/dummygit my-great-repo:my-tag --from ${repoOwner}`);
     });
 
-    it("Repo owners can add writers to a repo", async function() {
+    it("Repo owners can add writers to a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
@@ -164,26 +164,26 @@ contract("Githereum", (addresses) => {
       expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.be.ok;
     });
 
-    it("Repo owners cannot add writers to a repo they do not own", async function() {
-     await runCli(`register my-great-repo --from ${repoOwner}`);
-     await runCli(`register other-repo --from ${otherOwner}`);
+    it("Repo owners cannot add writers to a repo they do not own", async function () {
+      await runCli(`register my-great-repo --from ${repoOwner}`);
+      await runCli(`register other-repo --from ${otherOwner}`);
 
-     expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
+      expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
 
-     let attemptedAdd = runCli(`add writer my-great-repo ${writer} --from ${otherOwner}`);
-     await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new writers/);
+      let attemptedAdd = runCli(`add writer my-great-repo ${writer} --from ${otherOwner}`);
+      await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new writers/);
 
-     expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
+      expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
     });
 
-    it("Writers can write to a repo they are writers of", async function() {
+    it("Writers can write to a repo they are writers of", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${writer} --from ${repoOwner}`);
       await setupFixtureRepo('dummygit');
       await runCli(`push tmp/dummygit my-great-repo:my-tag --from ${writer}`);
     });
 
-    it("Writers cannot write to a repo they are not writers of", async function() {
+    it("Writers cannot write to a repo they are not writers of", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`register other-repo --from ${otherOwner}`);
       await runCli(`add writer other-repo ${writer} --from ${otherOwner}`);
@@ -192,7 +192,7 @@ contract("Githereum", (addresses) => {
       await expect(attemptedPush).to.be.rejectedWith(/Cannot push to a repo that you are not a writer or owner of/);
     });
 
-    it("Writers cannot add repo owners to a repo", async function() {
+    it("Writers cannot add repo owners to a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${writer} --from ${repoOwner}`);
 
@@ -200,14 +200,14 @@ contract("Githereum", (addresses) => {
       await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new owners/);
     });
 
-    it("Writers cannot add writers to a repo", async function() {
+    it("Writers cannot add writers to a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${writer} --from ${repoOwner}`);
       let attemptedAdd = runCli(`add writer my-great-repo ${someRandomAddress} --from ${writer}`);
       await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new writers/);
     });
 
-    it("Writers cannot remove repo owners from a repo", async function() {
+    it("Writers cannot remove repo owners from a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add owner my-great-repo ${otherOwner} --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${writer} --from ${repoOwner}`);
@@ -216,7 +216,7 @@ contract("Githereum", (addresses) => {
       await expect(attemptedRemove).to.be.rejectedWith(/Only repo owners can remove owners/);
     });
 
-    it("Writers cannot remove writers from a repo", async function() {
+    it("Writers cannot remove writers from a repo", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${writer} --from ${repoOwner}`);
       await runCli(`add writer my-great-repo ${otherWriter} --from ${repoOwner}`);
@@ -225,13 +225,13 @@ contract("Githereum", (addresses) => {
       await expect(attemptedRemove).to.be.rejectedWith(/Only repo owners can remove writers/);
     });
 
-    it("Cannot write to a repo that is not registered", async function() {
+    it("Cannot write to a repo that is not registered", async function () {
       await setupFixtureRepo('dummygit');
       let attemptedPush = runCli(`push tmp/dummygit my-great-repo:my-tag --from ${writer}`);
       await expect(attemptedPush).to.be.rejectedWith(/my-great-repo is not registered/);
     });
 
-    it("Repo owners cannot write to a repo they do not own", async function() {
+    it("Repo owners cannot write to a repo they do not own", async function () {
       await runCli(`register my-great-repo --from ${repoOwner}`);
       await runCli(`register other-repo --from ${ownerOfOtherRepo}`);
 
@@ -240,7 +240,7 @@ contract("Githereum", (addresses) => {
       await expect(attemptedPush).to.be.rejectedWith(/Cannot push to a repo that you are not a writer or owner of/);
     });
 
-    it("Cannot read from a repo that is not registered", async function() {
+    it("Cannot read from a repo that is not registered", async function () {
       let attemptedHead = runCli(`head some-repo:master`);
       await expect(attemptedHead).to.be.rejectedWith(/Repo is not registered/);
 
@@ -251,12 +251,12 @@ contract("Githereum", (addresses) => {
       await expect(attemptedPull).to.be.rejectedWith(/some-repo is not registered/);
     });
 
-    it("Cannot register a repo with : in the name", async function() {
+    it("Cannot register a repo with : in the name", async function () {
       let attemptedRegister = runCli(`register repo:badname --from ${repoOwner}`);
       await expect(attemptedRegister).to.be.rejectedWith(/Repo names cannot contain the : character/);
     });
 
-    it("Anyone can read from a repo", async function() {
+    it("Anyone can read from a repo", async function () {
       await setupFixtureRepo('dummygit');
       await runCli(`register my-repo --from ${repoOwner}`);
       await runCli(`push tmp/dummygit my-repo:my-tag --from ${repoOwner}`);
@@ -267,8 +267,8 @@ contract("Githereum", (addresses) => {
 
   });
 
-  describe("Private Repos", async function() {
-    before(async function() {
+  describe("Private Repos", async function () {
+    before(async function () {
       await shellCommand("rm -rf testkeys");
       await cli(`keygen testkeys/owner`);
       await cli(`keygen testkeys/otherowner`);
@@ -276,19 +276,19 @@ contract("Githereum", (addresses) => {
       await cli(`keygen testkeys/reader`);
     });
 
-    after(async function() {
+    after(async function () {
       await shellCommand("rm -rf testkeys");
     });
 
     this.slow(4000);
-    it("Generates an rsa keypair", async function() {
+    it("Generates an rsa keypair", async function () {
       await cli(`keygen tmp/mykeypair`);
       expect(fs.readFileSync(resolve('tmp', 'mykeypair', 'rsa.pub'), 'utf8')).to.match(/BEGIN PUBLIC KEY/);
       expect(fs.readFileSync(resolve('tmp', 'mykeypair', 'rsa.pem'), 'utf8')).to.match(/BEGIN RSA PRIVATE KEY/);
     });
 
 
-    it("Registers a private repo", async function() {
+    it("Registers a private repo", async function () {
       await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isOwner("my-great-repo", repoOwner).call()).to.be.ok;
@@ -305,7 +305,7 @@ contract("Githereum", (addresses) => {
     });
 
 
-    it("Repo owners can add new repo owners to a private repo", async function() {
+    it("Repo owners can add new repo owners to a private repo", async function () {
       await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
       let key = await githereumContract.methods.encryptedKey("my-great-repo", repoOwner).call();
@@ -339,17 +339,17 @@ contract("Githereum", (addresses) => {
       expect(ownerDecryptedKey).to.equal(newOwnerDecryptedKey, "The symmetric keys should be the same after decrypting with the associated private key");
     });
 
-    it("Requires key to add owner", async function() {
+    it("Requires key to add owner", async function () {
       await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isOwner("my-great-repo", otherOwner).call()).to.not.be.ok;
 
-      let attemptedAdd =  runCli(`add owner my-great-repo ${otherOwner} --from ${repoOwner}`);
+      let attemptedAdd = runCli(`add owner my-great-repo ${otherOwner} --from ${repoOwner}`);
 
       await expect(attemptedAdd).to.be.rejectedWith(/Public and private key is required to add owner to private repo/);
     });
 
-    it("Repo owners can add writers to a private repo", async function() {
+    it("Repo owners can add writers to a private repo", async function () {
       await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
       expect(await githereumContract.methods.isWriter("my-great-repo", writer).call()).to.not.ok;
@@ -376,7 +376,7 @@ contract("Githereum", (addresses) => {
     });
 
 
-    it("Requires key to add writer", async function() {
+    it("Requires key to add writer", async function () {
       await cli(`keygen tmp/mykeypair`);
 
       await runCli(`register my-great-repo --private tmp/mykeypair --from ${repoOwner}`);
@@ -389,9 +389,9 @@ contract("Githereum", (addresses) => {
     });
 
 
-    describe("Reader admin", async function() {
+    describe("Reader admin", async function () {
 
-      it("Cannot add readers to a public repo", async function() {
+      it("Cannot add readers to a public repo", async function () {
         await runCli(`register my-great-repo --from ${repoOwner}`);
 
         expect(await githereumContract.methods.isReader("my-great-repo", reader).call()).to.not.ok;
@@ -403,7 +403,7 @@ contract("Githereum", (addresses) => {
         expect(await githereumContract.methods.isReader("my-great-repo", reader).call()).to.not.ok;
       });
 
-      it("Repo owners can add readers to a repo", async function() {
+      it("Repo owners can add readers to a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
         expect(await githereumContract.methods.isPrivate("my-great-repo").call()).to.be.ok;
@@ -436,7 +436,7 @@ contract("Githereum", (addresses) => {
       });
 
 
-      it("Requires key to add reader", async function() {
+      it("Requires key to add reader", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
         expect(await githereumContract.methods.isReader("my-great-repo", reader).call()).to.not.be.ok;
@@ -447,19 +447,19 @@ contract("Githereum", (addresses) => {
         expect(await githereumContract.methods.isReader("my-great-repo", reader).call()).to.not.be.ok;
       });
 
-      it("Repo owners cannot add readers to a repo they do not own", async function() {
-       await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
-       await runCli(`register other-repo --private testkeys/owner --from ${otherOwner}`);
+      it("Repo owners cannot add readers to a repo they do not own", async function () {
+        await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
+        await runCli(`register other-repo --private testkeys/owner --from ${otherOwner}`);
 
-       expect(await githereumContract.methods.isReader("my-great-repo", writer).call()).to.not.ok;
+        expect(await githereumContract.methods.isReader("my-great-repo", writer).call()).to.not.ok;
 
-       let attemptedAdd = runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${otherOwner}`);
-       await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new readers/);
+        let attemptedAdd = runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${otherOwner}`);
+        await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new readers/);
 
-       expect(await githereumContract.methods.isReader("my-great-repo", writer).call()).to.not.ok;
+        expect(await githereumContract.methods.isReader("my-great-repo", writer).call()).to.not.ok;
       });
 
-      it("Readers cannot add repo owners to a repo", async function() {
+      it("Readers cannot add repo owners to a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
@@ -468,7 +468,7 @@ contract("Githereum", (addresses) => {
         await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new owners/);
       });
 
-      it("Readers cannot add writers to a repo", async function() {
+      it("Readers cannot add writers to a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
 
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
@@ -477,14 +477,14 @@ contract("Githereum", (addresses) => {
         await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new writers/);
       });
 
-      it("Readers cannot add readers to a repo", async function() {
+      it("Readers cannot add readers to a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
         let attemptedAdd = runCli(`add reader my-great-repo ${someRandomAddress} --private testkeys/reader --public testkeys/reader --from ${reader}`);
         await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new readers/);
       });
 
-      it("Readers cannot remove repo owners from a repo", async function() {
+      it("Readers cannot remove repo owners from a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
 
@@ -492,7 +492,7 @@ contract("Githereum", (addresses) => {
         await expect(attemptedRemove).to.be.rejectedWith(/Only repo owners can remove owners/);
       });
 
-      it("Readers cannot remove writers from a repo", async function() {
+      it("Readers cannot remove writers from a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add writer my-great-repo ${writer} --private testkeys/owner --public testkeys/writer --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
@@ -501,7 +501,7 @@ contract("Githereum", (addresses) => {
         await expect(attemptedRemove).to.be.rejectedWith(/Only repo owners can remove writers/);
       });
 
-      it("Readers cannot remove readers from a repo", async function() {
+      it("Readers cannot remove readers from a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${otherReader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
@@ -510,7 +510,7 @@ contract("Githereum", (addresses) => {
         await expect(attemptedRemove).to.be.rejectedWith(/Only repo owners can remove reader/);
       });
 
-      it("Writers cannot add readers to a repo", async function() {
+      it("Writers cannot add readers to a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add writer my-great-repo ${writer} --private testkeys/owner --public testkeys/writer --from ${repoOwner}`);
 
@@ -518,7 +518,7 @@ contract("Githereum", (addresses) => {
         await expect(attemptedAdd).to.be.rejectedWith(/Only repo owners can add new readers/);
       });
 
-      it("Writers cannot remove readers from a repo", async function() {
+      it("Writers cannot remove readers from a repo", async function () {
         await runCli(`register my-great-repo --private testkeys/owner --from ${repoOwner}`);
         await runCli(`add writer my-great-repo ${writer} --private testkeys/owner --public testkeys/writer --from ${repoOwner}`);
         await runCli(`add reader my-great-repo ${reader} --private testkeys/owner --public testkeys/reader --from ${repoOwner}`);
@@ -530,7 +530,7 @@ contract("Githereum", (addresses) => {
 
     });
 
-    it("pushes a simple repo to the blockchain and restores it again using a private repo", async() => {
+    it("pushes a simple repo to the blockchain and restores it again using a private repo", async () => {
       await setupFixtureRepo('dummygit');
       await runCli(`register my-repo --private testkeys/owner --from ${repoOwner}`);
 
@@ -542,10 +542,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone my-repo:my-tag tmp/cloned --private testkeys/owner --from ${repoOwner}`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal('a47c8dc067a1648896f7de6759d25411f8f665a0');
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(4);
 
@@ -556,10 +556,10 @@ contract("Githereum", (addresses) => {
   });
 
 
-  describe("Repo operations", async function() {
+  describe("Repo operations", async function () {
     this.slow(2000);
 
-    it("pushes a simple repo to the blockchain and restores it again", async() => {
+    it("pushes a simple repo to the blockchain and restores it again", async () => {
 
       await setupFixtureRepo('dummygit');
       await runCli(`register my-repo --from ${repoOwner}`);
@@ -573,10 +573,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone my-repo:my-tag tmp/cloned`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal('a47c8dc067a1648896f7de6759d25411f8f665a0');
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(4);
 
@@ -586,7 +586,7 @@ contract("Githereum", (addresses) => {
     });
 
 
-    it("pushes a repo to the blockchain and restores it again when the repo uses packfiles", async() => {
+    it("pushes a repo to the blockchain and restores it again when the repo uses packfiles", async () => {
       await setupFixtureRepo('dummygit-packed');
       await runCli(`register my-repo --from ${repoOwner}`);
 
@@ -599,10 +599,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone my-repo:packed-tag tmp/cloned`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal('a47c8dc067a1648896f7de6759d25411f8f665a0');
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(4);
 
@@ -612,7 +612,7 @@ contract("Githereum", (addresses) => {
 
     });
 
-    it("pushes a repo to the blockchain and restores it again when the repo has commits with multiple parents", async() => {
+    it("pushes a repo to the blockchain and restores it again when the repo has commits with multiple parents", async () => {
       await setupFixtureRepo('repo-with-merge');
 
       await runCli(`register merge --from ${repoOwner}`);
@@ -625,10 +625,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone merge:merged-tag tmp/cloned`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal('93ae4072e3660b23b30b80cfc98620dfbe20ca85');
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(7);
 
@@ -639,7 +639,7 @@ contract("Githereum", (addresses) => {
     });
 
 
-    it("works with bare repos", async() => {
+    it("works with bare repos", async () => {
       await setupBareFixtureRepo('dummygit');
       await runCli(`register bare --from ${repoOwner}`);
 
@@ -651,10 +651,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone bare:bare-tag tmp/cloned`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal('a47c8dc067a1648896f7de6759d25411f8f665a0');
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(4);
 
@@ -664,20 +664,21 @@ contract("Githereum", (addresses) => {
 
     });
 
-    it("pushes an update to a tag to the blockchain", async() => {
+    it("pushes an update to a tag to the blockchain", async () => {
       await shellCommand("mkdir tmp/dummy-repo");
       await runCli(`register update --from ${repoOwner}`);
 
-      await Git.init({ dir: 'tmp/dummy-repo' });
+      await Git.init({ dir: 'tmp/dummy-repo', fs: fs });
 
       let shas = [];
 
 
       async function writeDummyCommit(content) {
         fs.writeFileSync("tmp/dummy-repo/content.txt", content);
-        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt' });
+        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
 
         return await Git.commit({
+          fs: fs,
           dir: 'tmp/dummy-repo',
           author: {
             name: 'Mr. Test',
@@ -739,19 +740,20 @@ contract("Githereum", (addresses) => {
       expect(await getHead('update:incremental-tag')).to.equal(shas[shas.length - 1]);
     });
 
-    it("Pulls an updated tag from the blockchain", async() => {
+    it("Pulls an updated tag from the blockchain", async () => {
       await shellCommand("mkdir tmp/dummy-repo");
       await runCli(`register update --from ${repoOwner}`);
 
-      await Git.init({ dir: 'tmp/dummy-repo' });
+      await Git.init({ dir: 'tmp/dummy-repo', fs: fs });
 
       let shas = [];
 
       async function writeDummyCommit(content) {
         fs.writeFileSync("tmp/dummy-repo/content.txt", content);
-        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt' });
+        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
 
         return await Git.commit({
+          fs: fs,
           dir: 'tmp/dummy-repo',
           author: {
             name: 'Mr. Test',
@@ -773,10 +775,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`clone update:pull-tag tmp/cloned`);
 
-      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      let fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal(head);
 
-      let commits = await Git.log({ dir: 'tmp/cloned' });
+      let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(2);
 
@@ -797,10 +799,10 @@ contract("Githereum", (addresses) => {
 
       await runCli(`pull update:pull-tag tmp/cloned`);
 
-      fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master' });
+      fullRef = await Git.resolveRef({ dir: 'tmp/cloned', ref: 'master', fs: fs });
       expect(fullRef).to.equal(head);
 
-      commits = await Git.log({ dir: 'tmp/cloned' });
+      commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
       expect(commits.length).to.equal(4);
 
