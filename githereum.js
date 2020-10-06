@@ -361,7 +361,6 @@ class Githereum {
 
     let { filename, packfile } = await this.makePackFile(async () => {
       for (let commit of commits) {
-        this.log(`Storing commit ${commit.oid}`);
         await this.writeToPackfile(commit.oid);
         await this.storeTree(commit.commit.tree);
       }
