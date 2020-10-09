@@ -346,8 +346,10 @@ class Githereum {
 
     try {
       head = await Githereum.head(this.repoName, tag, this.contract, { log: this.log });
+      this.log("Head", head);
     } catch(e) {
       // There is no head for this tag
+      this.log("Error in Githereum.had", e);
     }
 
     let commits = await this.getCommits(head);
@@ -367,7 +369,7 @@ class Githereum {
     await this.writeToBlobStream(filename, packfile);
 
     let pushPayload = await this.writePushToBlockchain(commits[commits.length-1], tag, filename);
-
+    this.log("Push payload to blockchain", pushPayload);
     return pushPayload;
   }
 
