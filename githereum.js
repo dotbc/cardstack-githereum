@@ -317,7 +317,7 @@ class Githereum {
   }
 
   async writePushToBlockchain(commit, tag, packSha) {
-    await this.contract.push(this.repoName, tag, commit.oid, packSha, {from: this.from});
+    return await this.contract.push(this.repoName, tag, commit.oid, packSha, {from: this.from});
   }
 
   async handlePrivate() {
@@ -335,7 +335,7 @@ class Githereum {
   }
 
   async push(tag) {
-
+    console.log("IN GITHEREUM")
     if(!tag || !tag.length) {
       throw new Error("Tag must be provided to push to");
     }
