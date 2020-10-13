@@ -264,11 +264,12 @@ class Githereum {
 
     for (let entry of treeInfo.object.entries) {
       if (entry.type === 'tree') {
-        await this.storeTree(entry.oid);
+        return await this.storeTree(entry.oid);
       } else if (entry.type === 'blob') {
-        await this.writeToPackfile(entry.oid);
+        return await this.writeToPackfile(entry.oid);
       }
     }
+
   }
 
   async downloadPush(tag) {
@@ -358,16 +359,19 @@ class Githereum {
       this.log(`Nothing to push, tag ${tag} is already at sha ${head}`);
       return;
     }
-
+    this.log("Commit length", commits.length);
+    this.log("Commit first oid", commits[0].oid);
+    this.log("Commit latest oid", commits[commits.length - 1].oid);
     let { filename, packfile } = await this.makePackFile(async () => {
       for (let commit of commits) {
         await this.writeToPackfile(commit.oid);
         await this.storeTree(commit.tree);
       }
     });
-
-    await this.writeToBlobStream(filename, packfile);
-
+    this.log("Filename", filename);
+    this.log("Packfile", packfile);
+    const blobStream = await this.writeToBlobStream(filename, packfile);
+    this.log("Blob stream", blobStream);
     let pushPayload = await this.writePushToBlockchain(commits[commits.length-1], tag, filename);
     this.log("Push payload to blockchain", pushPayload);
     return pushPayload;
@@ -417,19 +421,19 @@ class Githereum {
   }
 
   async makePackFile(callback) {
-
     this.oidsToPack = [];
-
     await callback();
+    this.log("OIDS TO PACK LENGTH", this.oidsToPack.length);
 
-
-    return await this.gitCommand('packObjects', {
+    const packObjects = await this.gitCommand('packObjects', {
       oids: this.oidsToPack
     });
+    this.log("PACK OBJECT", packObjects);
+    return packObjects;
   }
 
   async writeToPackfile(oid) {
-    this.oidsToPack.push(oid);
+    return this.oidsToPack.push(oid);
   }
 
   async writeToBlobStream(key, blob) {
