@@ -336,7 +336,7 @@ class Githereum {
   }
 
   async push(tag) {
-    console.log("IN GITHEREUM")
+    this.log("IN GITHEREUM");
     if(!tag || !tag.length) {
       throw new Error("Tag must be provided to push to");
     }
@@ -425,9 +425,11 @@ class Githereum {
     await callback();
     this.log("OIDS TO PACK LENGTH", this.oidsToPack.length);
 
+
     const packObjects = await this.gitCommand('packObjects', {
       oids: this.oidsToPack
     });
+
     this.log("PACK OBJECT", packObjects);
     return packObjects;
   }
