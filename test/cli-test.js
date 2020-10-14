@@ -17,7 +17,25 @@ ZWeb3.initialize(web3.currentProvider);
 
 const GithereumContract = Contracts.getFromLocal('Githereum');
 
+async function writeDummyCommit(content) {
 
+  content = content.toString();
+
+  fs.writeFileSync("tmp/dummy-repo/content.txt", content);
+  await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
+
+  return await Git.commit({
+    fs: fs,
+    dir: 'tmp/dummy-repo',
+    author: {
+      name: 'Mr. Test',
+      email: 'mrtest@example.com'
+    },
+    message: `Commit ${content}`
+  });
+}
+
+const COMMITS = [...Array(1000).keys()];
 
 contract("Githereum", (addresses) => {
   const [owner, repoOwner, someRandomAddress, otherOwner, ownerOfOtherRepo, writer, otherWriter, reader, otherReader] = addresses;
@@ -672,23 +690,7 @@ contract("Githereum", (addresses) => {
 
       let shas = [];
 
-
-      async function writeDummyCommit(content) {
-        fs.writeFileSync("tmp/dummy-repo/content.txt", content);
-        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
-
-        return await Git.commit({
-          fs: fs,
-          dir: 'tmp/dummy-repo',
-          author: {
-            name: 'Mr. Test',
-            email: 'mrtest@example.com'
-          },
-          message: `Commit ${content}`
-        });
-      }
-
-      for (let content of ["a", "b"]) {
+      for (let content of COMMITS) {
         let sha = await writeDummyCommit(content);
         shas.push(sha);
       }
@@ -721,7 +723,7 @@ contract("Githereum", (addresses) => {
       expect(await getHead('update:incremental-tag')).to.equal(firstPushSha);
 
 
-      for (let content of ["c", "d"]) {
+      for (let content of COMMITS) {
         let sha = await writeDummyCommit(content);
         shas.push(sha);
       }
@@ -748,22 +750,9 @@ contract("Githereum", (addresses) => {
 
       let shas = [];
 
-      async function writeDummyCommit(content) {
-        fs.writeFileSync("tmp/dummy-repo/content.txt", content);
-        await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
+      
 
-        return await Git.commit({
-          fs: fs,
-          dir: 'tmp/dummy-repo',
-          author: {
-            name: 'Mr. Test',
-            email: 'mrtest@example.com'
-          },
-          message: `Commit ${content}`
-        });
-      }
-
-      for (let content of ["a", "b"]) {
+      for (let content of COMMITS) {
         let sha = await writeDummyCommit(content);
         shas.push(sha);
       }
@@ -780,14 +769,14 @@ contract("Githereum", (addresses) => {
 
       let commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
-      expect(commits.length).to.equal(2);
+      expect(commits.length).to.equal(COMMITS.length);
 
       expect(commits.map(c => c.oid)).to.deep.equal(shas.slice().reverse());
 
-      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal("b");
+      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal(COMMITS[COMMITS.length - 1].toString());
 
 
-      for (let content of ["c", "d"]) {
+      for (let content of COMMITS) {
         let sha = await writeDummyCommit(content);
         shas.push(sha);
       }
@@ -804,11 +793,11 @@ contract("Githereum", (addresses) => {
 
       commits = await Git.log({ dir: 'tmp/cloned', fs: fs });
 
-      expect(commits.length).to.equal(4);
+      expect(commits.length).to.equal(COMMITS.length * 2);
 
       expect(commits.map(c => c.oid)).to.deep.equal(shas.slice().reverse());
 
-      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal("d");
+      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal((COMMITS[COMMITS.length - 1].toString()));
 
 
     });
