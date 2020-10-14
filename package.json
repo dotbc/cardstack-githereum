@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rm -rf build && npm run build:zos",
     "build:zos": "zos add Githereum",
-    "test": "npm run lint && npm run-script build && truffle test --network=development",
+    "test": "npm run lint && npm run-script build && truffle test --network=development --timeout=6000000",
     "lint": "npm run lint:mocha && npm run lint:sol && npm run lint:js",
     "lint:sol": "solhint 'contracts/**/*.sol' 'test/**/*.sol'",
     "lint:js": "eslint . --cache --ignore-path .gitignore --ext=js",

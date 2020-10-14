@@ -16,13 +16,16 @@ const { Contracts, ZWeb3 } = require('zos-lib');
 ZWeb3.initialize(web3.currentProvider);
 
 const GithereumContract = Contracts.getFromLocal('Githereum');
+const TIMEOUT = 60000000;
 
-async function writeDummyCommit(content) {
+async function writeDummyCommit(content) { 
 
   content = content.toString();
 
-  fs.writeFileSync("tmp/dummy-repo/content.txt", content);
-  await Git.add({ dir: 'tmp/dummy-repo', filepath: 'content.txt', fs: fs });
+  const filename = `content${Math.random()}.txt`;
+
+  fs.writeFileSync(`tmp/dummy-repo/${filename}`, content);
+  await Git.add({ dir: 'tmp/dummy-repo', filepath: filename, fs: fs });
 
   return await Git.commit({
     fs: fs,
@@ -35,7 +38,7 @@ async function writeDummyCommit(content) {
   });
 }
 
-const COMMITS = [...Array(1000).keys()];
+const COMMITS = [...Array(100000).keys()];
 
 contract("Githereum", (addresses) => {
   const [owner, repoOwner, someRandomAddress, otherOwner, ownerOfOtherRepo, writer, otherWriter, reader, otherReader] = addresses;
@@ -576,6 +579,8 @@ contract("Githereum", (addresses) => {
 
   describe("Repo operations", async function () {
     this.slow(2000);
+    this.timeout(TIMEOUT);
+   
 
     it("pushes a simple repo to the blockchain and restores it again", async () => {
 
@@ -773,7 +778,7 @@ contract("Githereum", (addresses) => {
 
       expect(commits.map(c => c.oid)).to.deep.equal(shas.slice().reverse());
 
-      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal(COMMITS[COMMITS.length - 1].toString());
+      //expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal(COMMITS[COMMITS.length - 1].toString());
 
 
       for (let content of COMMITS) {
@@ -797,7 +802,7 @@ contract("Githereum", (addresses) => {
 
       expect(commits.map(c => c.oid)).to.deep.equal(shas.slice().reverse());
 
-      expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal((COMMITS[COMMITS.length - 1].toString()));
+     // expect(fs.readFileSync('tmp/cloned/content.txt', 'utf8')).to.equal((COMMITS[COMMITS.length - 1].toString()));
 
 
     });
